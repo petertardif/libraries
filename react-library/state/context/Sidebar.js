@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { FavouriteColorContext } from './App';
+import FavouriteColorContext from './app';
 
 function Sidebar() {
 	// Step 3 - Use the FavouriteColorContext

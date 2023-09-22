@@ -10,7 +10,8 @@ Context is most commonly used for global state. This is in contrast to local s
 
 1. Create a new context with `React.createContext`.
 2. Use the `Provider` component, from that context, to wrap around the application. Pass it a bundle of values that you need in other parts of the app.
-3. Pluck the data you need from context, with the `useContext` hook.
+3. Wrap setState or other functions in useCallback and then their values as an object in useMemo before they are passed to a context provider.
+4. Pluck the data you need from context, with the `useContext` hook.
 
 ### Pros
 
@@ -46,8 +47,34 @@ You can nest and override providers as many times as you need.
 ### Rules of Thumb
 
 - If you find you keep having to pass a prop through a component, you should probably use context for it.
+- Create separate contexts in different files within a context directory. You can then import/export these components where they are needed throughout the application.
 
 ### Any Gotchas?
 
-- When passing an OBJECT as the value on a Context Provider, always memoize it with the useMemo() hook so we are only regenerating that object when one of the state values changes in the object. This will take care of a performance issue that might creep up with regenerating objects. Note: you cannot memoize the actual Context Provider that receives a React element as props. It is better to memoize the value that we pass through
 - useContext() always looks for the closest provider above the component that calls it. It searches upwards and does not consider providers in the component from which you’re calling useContext()
+
+- When passing an object as the value on a Context Provider, always memoize it with the useMemo() hook so we are only regenerating that object when one of the state values changes in the object. Same goes for functions, but instead useCallback is required. This will take care of a performance issue that might creep up with regenerating objects and will avoid rerenders of underlying context when their specific value does not change. A component that contains the object can still rerender, but again, if the context value does not change then the context will not rerender. Note: you cannot memoize the actual Context Provider that receives a React element as props. It is better to memoize the value that we pass through.
+
+```
+import { useCallback, useMemo } from 'react';
+
+function MyApp() {
+  const [currentUser, setCurrentUser] = useState(null);
+
+  const login = useCallback((response) => {
+    storeCredentials(response.credentials);
+    setCurrentUser(response.user);
+  }, []);
+
+  const contextValue = useMemo(() => ({
+    currentUser,
+    login
+  }), [currentUser, login]);
+
+  return (
+    <AuthContext.Provider value={contextValue}>
+      <Page />
+    </AuthContext.Provider>
+  );
+}
+```
